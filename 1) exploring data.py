@@ -2,7 +2,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 #first set correct working directory
 from pathlib import Path
 
@@ -22,6 +21,7 @@ inference_data = pd.read_csv("inference_data.csv")
 model_data_vars = model_data.columns.tolist()
 inference_data_vars = inference_data.columns.tolist()
 
+#visiualize distributions of variables; numerical are blue and categorical are orange
 def feature_distribution(dataframe, n_cols=3):
     """
     plots the distribution of all features in given dataframe
@@ -93,13 +93,9 @@ model_data["claim_freq"] = model_data.apply(
 #Why does this pattern apply? We're normalizing the number of claims to a standard exposure unit (one year == exposure = 1) 
 
 
-#variable reduction
 
 
-#save new dataset
-
-
-#split into training/testing (before or after varible reduction??)
+#split into training/testing 
 training = model_data[model_data["sample"] == "1|bld"].copy() 
 #11,204 training points
 testing = model_data[model_data["sample"] == "2|val"].copy()
@@ -107,3 +103,74 @@ testing = model_data[model_data["sample"] == "2|val"].copy()
 
 #sanity check -- true!
 #print((len(training) + len(testing)) == len(model_data))
+
+
+
+#Break features into related groups for variable reduction purposes
+#Features describing the vehicle: 
+veh_pred_lst = ['veh_value', 'veh_body', 'veh_age', 'engine_type', 'max_power', 'veh_color', ]
+#Features describing the Policy
+policy_pred_lst = ['e_bill']
+#Features describing the driving behavior
+driving_behavior_pred_lst = ['area', 'time_of_week_driven', 'time_driven']
+#Features describing the driver
+demo_pred_lst = ['marital_status', 'low_education_ind', 'credit_score', 'driving_history_score', 'gender', 'agecat']
+
+#what does this do?
+pred_lst = veh_pred_lst + policy_pred_lst + driving_behavior_pred_lst + demo_pred_lst
+cols = ['exposure'] + pred_lst
+
+# Concatenate model_data[cols] and inference_data[cols] vertically (ensures the same dummy variable structure across both)
+combined_expo_pred_data = pd.concat(
+    [model_data[cols], 
+     inference_data[cols]], 
+     axis=0, 
+     ignore_index=True
+     )
+print('Combined data shape:', combined_expo_pred_data.shape)
+combined_expo_pred_data.head()
+
+# Identify categorical perdictors
+categorical_cols = [
+    col for col in pred_lst 
+    if training[col].dtype == 'object' 
+    or str(training[col].dtype).startswith('category') 
+    or col == "agecat"
+    or col == "veh_age"
+]
+# One-hot encode categorical variables in pred_lst
+train_data_encoded = pd.get_dummies(training, columns=categorical_cols, drop_first=False)
+
+# Update pred_lst to include new dummy variable columns
+new_pred_lst = []
+for col in pred_lst:
+    if col in categorical_cols:
+        new_pred_lst.extend([c for c in train_data_encoded.columns if c.startswith(col + '_')])
+    else:
+        new_pred_lst.append(col)
+
+print('Categorical columns one-hot encoded:', categorical_cols)
+print('New predictor list:', new_pred_lst)
+
+
+
+#Make the testing data match!!
+# apply the same dummy encoding
+test_data_encoded = pd.get_dummies(testing, columns=categorical_cols, drop_first=False)
+
+# Ensure test data has the same columns as training
+# (fill in any missing dummy columns with zeros)
+for col in train_data_encoded.columns:
+    if col not in test_data_encoded.columns:
+        test_data_encoded[col] = 0
+
+# Align column order to match training data
+test_data_encoded = test_data_encoded[train_data_encoded.columns]
+
+
+
+
+#variable reduction
+
+
+

@@ -1,3 +1,14 @@
+Each observation = a specific customer's insurance policy for one policy term (6 or 12 months)
+
+claimcst0 ~ predicted frequency from frequency model * predicted severity from severity model
+
+frequency model: 
+claim_cnt ~ predictors
+
+severity model: 
+claim_sev ~ predictors
+
+
 id = policy key
 
 Numerical__________________________________
