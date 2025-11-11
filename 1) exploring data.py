@@ -19,8 +19,8 @@ print("Current working directory:", Path.cwd())
 model_data = pd.read_csv("model_data.csv")
 inference_data = pd.read_csv("inference_data.csv")
 
-model_data_columns = model_data.columns.tolist()
-inference_data_columns = inference_data.columns.tolist()
+model_data_vars = model_data.columns.tolist()
+inference_data_vars = inference_data.columns.tolist()
 
 def feature_distribution(dataframe, n_cols=3):
     """
@@ -81,4 +81,29 @@ model_data['claim_sev'] = model_data.apply(
     axis=1
 )
 
-#define claim frequency 
+#define claim frequency: numclaims (per policy)/exposure 
+model_data["claim_freq"] = model_data.apply(
+    lambda row: row["claim_cnt"] / row["exposure"]
+    if row["exposure"] != 0 else np.nan, #prevent division by 0
+    axis = 1 #apply row-wise
+) 
+
+#So claim_freq == 1 means one claim per full policy year (for example if claim_cnt = 1 and exposure = 1); 
+#claim_fre1 == 4 means four claims per full policy year (for example, if claim_cnt = 2 and exposure = 0.5; 2 claims were made in 6 months, meaning the pattern extends to 4 being made in a year)
+#Why does this pattern apply? We're normalizing the number of claims to a standard exposure unit (one year == exposure = 1) 
+
+
+#variable reduction
+
+
+#save new dataset
+
+
+#split into training/testing (before or after varible reduction??)
+training = model_data[model_data["sample"] == "1|bld"].copy() 
+#11,204 training points
+testing = model_data[model_data["sample"] == "2|val"].copy()
+#3796 testing points
+
+#sanity check -- true!
+#print((len(training) + len(testing)) == len(model_data))
