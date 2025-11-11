@@ -1,22 +1,31 @@
-- `id` - Policy key
-- `veh_value` - Market value of the vehicle in $10,000's
-- `exposure` - The basic unit of risk underlying an insurance premium
-- `veh_body` - Type of vehicles
-- `veh_age` - Age of vehicles (1=youngest, 4=oldest)
-- `gender` - Gender of driver
-- `area` - Driving area of residence
-- `agecat` - Driver's age category from young (1) to old (6)Driver’s age category from young (1) to old (6)
-- `engine_type` - Engine type of vehicles
-- `max_power` - Max horsepower of vehicles
-- `driving_history_score` - Driving score based on past driving history (higher the better)
-- `veh_color` - Color of vehicles
-- `marital_status` - Marital Status of driver (M = married, S = single)
-- `e_bill` - Indicator for paperless billing (0 = no, 1 = yes)
-- `time_of_week_driven` - Most frequent driving date of the week (weekdays vs weekend)
-- `time_driven` - Most frequent driving time of the day
-- `trm_len` - term length (6-month vs 12-month policies)
-- `credit_score` - Credit score
-- `low_education_ind` - indicator on low vs. high education
-- `clm` - Indicator of claim (0=no, 1=yes)
-- `numclaims` - The number of claims
-- `claimcst0` - Claim amount
+id = policy key
+
+Numerical__________________________________
+-   veh_value = market value of vehicle (in $10,000s)
+-   exposure = basic unit of risk underyling an insurance premium
+-   max_power = max horsepower of vehicles
+-   driving_history_score = driving score based on past driving history (higher is better)
+-   credit_score = credit score
+-   numclaims = number of claims per policy key
+-   claimcst0 = claim amount per policy key
+
+
+Categorical__________________________
+-   veh_body = type of vehicles
+-   veh_age = age of vehicles (1 = youngest, 4 = oldest)
+-   gender = gender of driver
+-   area = driving area of residence
+-   agecat = driver's age category from young (1) to old (6)
+-   engine_type = engine type of vehicles
+-   veh_color = color of vehicle
+-   marital_status = status of driver (M = married, S = single)
+-   time_of_week_driven = most frequent driving data of the week (weekdays vs weekend)
+-   time_driven = most frequent driving time of the day
+-   trm_len = term length (6-month vs 12-month policies)
+-   low_education_ind = indicator of low vs high education
+
+
+
+0/1 Binary_______________________________________
+-   e_bill = indicator of paperless billing (0 = no, 1 = yes)
+-   clm = indicator of claim (0 = no, 1 = yes)
