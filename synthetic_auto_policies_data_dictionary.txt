@@ -18,7 +18,7 @@ Numerical__________________________________
 -   driving_history_score = driving score based on past driving history (higher is better)
 -   credit_score = credit score
 -   numclaims = number of claims per policy key
--   claimcst0 = claim amount per policy key
+-   claimcst0 --> changed to claim_amt = claim amount per policy key
 
 
 Categorical__________________________

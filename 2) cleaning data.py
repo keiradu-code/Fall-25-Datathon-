@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
+from varclushi import VarClusHi
 
 #first set correct working directory
 from pathlib import Path
@@ -18,11 +20,12 @@ print("Current working directory:", Path.cwd())
 model_data = pd.read_csv("model_data.csv")
 
 
-#joe steps
-#don't seperate model data
-#don't consider inference data (yet)
-#define claim severity and frequency
-#apply dummy encoding
+
+
+####################################################
+#           ENCODING CATEGORICAL VARS              #
+####################################################
+
 
 
 ###MODEL ON ONLY ALL MODEL DATA, then split into train/test
@@ -67,6 +70,10 @@ categorical_cols = ["veh_body", "veh_age", "gender", "area", "agecat", "engine_t
 # One-hot encode categorical variables 
 model_data_encoded = pd.get_dummies(model_data, columns=categorical_cols, drop_first=False)
 
+#this saves them as TRUE/FALSE. Let's change that to 1/0
+model_data_encoded[model_data_encoded.select_dtypes(bool).columns] = model_data_encoded.select_dtypes(bool).astype(int)
+
+
 #how many variables do we have now? 
 print(f"Num of variables (including id, sample, fold, etc.): {len(model_data_encoded.columns)}")
 
@@ -84,26 +91,105 @@ for var in model_data_encoded.columns:
 print(f"Num of predictors: {len(predictors)}")
 
 
+
+
+
+
+
+
+####################################################
+#      VISUALIZING VARIABLE RELATIONSHIPS          #
+####################################################
+
+
+#Scatterplots of claim_amt to all predictors
+def pairwise_scatterplots_for_feature_reduction(dataset, predictors):
+    """
+    creates scatterplots for each predictor vs claim_amt to help with feature reduction.
+    """
+    for column in predictors:
+        plt.figure(figsize=(6, 4))
+        sns.scatterplot(data=dataset, y=column, x="claim_amt", alpha=1)
+        plt.title(f"Scatterplot: {column} vs claim_amt")
+        plt.xlabel("claim_amt")
+        plt.ylabel(column)
+        plt.tight_layout()
+        plt.show()
+#plot pairwise scatterplots with claim_amt on full encoded model data
+pairwise_scatterplots = pairwise_scatterplots_for_feature_reduction(model_data_encoded, predictors)
+
+
+#Which variables, based on these plots, look the most helpful? We don't do anything with this yet; it's just a hypothesis
+potentially_best_predictors = ["credit_score", "veh_body_BUS", "veh_body_MIBUS", "veh_body_PANVN", "veh_body_TRUCK", "veh_age_1", "veh_color_green", "veh_color_red", "time_drive_12am-6am", "trm_len_6"]
+
+
+
 #break up training and testing data
 train_data_encoded = model_data_encoded[model_data_encoded["sample"] == "1|bld"]
 test_data_encoded = model_data_encoded[model_data_encoded["sample"] == "2|val"]
 
 #save data
-train_data_encoded.to_csv("train_data_encoded.csv", index=False)
-test_data_encoded.to_csv("test_data_encoded.csv", index=False)
+#train_data_encoded.to_csv("train_data_encoded.csv", index=False)
+#test_data_encoded.to_csv("test_data_encoded.csv", index=False)
 
 
 
 
 
-#next steps: 
-#visualize data as claimcst = [all variables] scatterplots
-#tree 
-#variable reduction on models
 
 
 
 
 
+
+####################################################
+#           VARIABLE REDUCTION                     #
+####################################################
+
+#apply varclushi variable reduction 
 #https://github.com/jingtt/varclushi/blob/master/README.md
 
+model_data_encoded_vc = VarClusHi(model_data_encoded[predictors],maxeigval2=1,maxclus=None)
+model_data_encoded_vc.varclus()
+
+#get the number of clusters, variables in each cluster (N_Vars), and variance explained by each cluster
+print(model_data_encoded_vc.info)
+#get the (1-rsquare) ratio of each variable. meaning...?
+print(model_data_encoded_vc.rsquare)
+
+#now we can look at the clusters and choose one or a few variables per cluster to include in the model (usually the one with highest RS_Own)
+#This helps reduce multicollinearity and redundancy. 
+#if varprop == 1, then the variables are perfectly correlated
+
+df_varlevel = model_data_encoded_vc.rsquare.reset_index()
+df_varlevel = df_varlevel.drop(columns='index')
+df_varlevel.columns = ['Cluster', 'Variable', 'RS_Own', 'RS_NC', 'RS_Ratio']
+#find the row index of the variable with the highest RS_Own in a cluster, and selects the name of the variable corresponding to that row
+#so representative_vars is a series where each cluster has the variable with the highest RS_Own
+representative_vars = df_varlevel.groupby('Cluster').apply(lambda g: g.loc[g['RS_Own'].idxmax(), 'Variable'])
+print(representative_vars.tolist())
+# Convert representative_vars from Series to list
+rep_vars_list = representative_vars.tolist()
+
+# Reduced dataset with only representative variables + target
+reduced_data = model_data_encoded[rep_vars_list + ['claim_amt', 'claim_cnt', 'claim_sev', 'claim_freq', 'sample']]
+
+
+# Split into train/test
+train_data_reduced = reduced_data[reduced_data['sample'] == '1|bld']
+test_data_reduced = reduced_data[reduced_data['sample'] == '2|val']
+
+# Save reduced datasets
+#train_data_reduced.to_csv("train_data_reduced.csv", index=False)
+#test_data_reduced.to_csv("test_data_reduced.csv", index=False)
+
+
+
+
+#####################################################
+#                   SANITY CHECKS!                  #   
+#####################################################
+
+#making sure we didn't lose any datapoints -- we're all good! :)
+print(len(train_data_encoded) == len(train_data_reduced))
+print(len(test_data_encoded) == len(test_data_reduced))
