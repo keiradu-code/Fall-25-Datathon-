@@ -3,6 +3,7 @@
 
 #pandas
 import pandas as pd
+import os
 # Ensure the parent directory is in the path for module import
 import sys
 sys.path.append(os.path.abspath(".."))
@@ -14,9 +15,9 @@ data = pd.read_csv('Datasets/train_data_reduced.csv')
 
 # Define variables
 exp_var = 'exposure'
-pred_var = 'pred_rescale'
-var_1 = 'claim_amt_capped'
-var_2 = 'pred_rescale'
+pred_var = 'train_pred1'
+var_1 = 'claim_amt'
+var_2 = 'train_pred1'
 nbins = 10
 
 
