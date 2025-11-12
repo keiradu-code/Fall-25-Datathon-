@@ -4,6 +4,7 @@ import pandas as pd
 import xgboost as xgb
 from sklearn.metrics import r2_score, mean_squared_error
 import numpy as np
+import itertools
 
 
 
@@ -122,6 +123,11 @@ def train_xgb_model(train_df, test_df, predictors, response, params, num_boost_r
 
 
 
+
+
+##########################################
+#       RUNNING ON COPIED PARAMETERS     #
+##########################################
 params1 = {
     #regression function; tweedie is good because it is made for datasets with many 0's and only positive values
     'objective': 'reg:tweedie',
@@ -153,4 +159,46 @@ print("R2 Train:", metrics1["R2_Train"])
 print("R2 Test:", metrics1["R2_Test"])
 print("RMSE Train:", metrics1["RMSE_Train"])
 print("RMSE Test:", metrics1["RMSE_Test"])
+
+###############################################
+#       LOOPING OVER PARAMETER VALUES         #
+###############################################
+#ranges of parameter values: CHOOSE LESS!!!!! THIS WILL RUNN > 900 MODELS!!!!
+param_grid = {
+    'learning_rate': [0.01, 0.05, 0.1],
+    'max_depth': [3, 5, 7],
+    'min_child_weight': [1, 10, 100],
+    'subsample': [0.6, 0.8, 1.0],
+    'colsample_bytree': [0.6, 0.8, 1.0],
+    'lambda': [0, 1.0],
+    'alpha': [0, 0.5],
+}
+
+#unchanging parameters
+fixed_params = {
+    'objective': 'reg:tweedie',
+    'tweedie_variance_power': 1.5,
+    'seed': 42,
+    'nthread' : -1
+}
+
+#generate all possible combinations of parameter values
+keys, values = zip(*param_grid.items())
+combinations = [dict(zip(keys, v)) for v in itertools.product(*values)]
+
+#loop over all of these combinations
+# Loop over each combination
+for i, combo in enumerate(combinations, start=1):
+    params = fixed_params.copy()
+    params.update(combo)
+    
+    print(f"\n===== Model {i} =====")
+    print("Parameters:", params)
+    
+    metrics = train_xgb_model(train_data_reduced, test_data_reduced, predictors, response, params, num_boost_round=1000)
+    
+    print(f"R2 Train: {metrics['R2_Train']:.4f}")
+    print(f"R2 Test:  {metrics['R2_Test']:.4f}")
+    print(f"RMSE Train: {metrics['RMSE_Train']:.4f}")
+    print(f"RMSE Test:  {metrics['RMSE_Test']:.4f}")
 
