@@ -1,6 +1,9 @@
 import pandas as pd
 from sklearn.linear_model import TweedieRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, r2_score
+import pandas as pd
+import numpy as np
 
 
 ##load data and split into predictor and response dataset
@@ -31,7 +34,18 @@ ytest = test_data_reduced[response]
 
 
 scaler = StandardScaler()
+scaler.fit(xtrain)
+xtrain_scaled = scaler.transform(xtrain)
+xtest_scaled = scaler.transform(xtest)
 
+tweedie_model = TweedieRegressor(power=1.5, alpha=0.5)
+tweedie_model.fit(xtrain_scaled, ytrain)
 
+ypred = tweedie_model.predict(xtest_scaled)
+tweedie_mse = mean_squared_error(ytest, ypred)
+tweedie_r2 = r2_score(ytest, ypred)
+
+print('Tweedie MSE: ', tweedie_mse)
+print('Tweedie R^2: ', tweedie_r2)
 
 
