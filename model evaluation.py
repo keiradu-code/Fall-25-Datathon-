@@ -12,6 +12,8 @@ from Datasets.model_selection import ModelEvaluation
 
 # Select training samples for predictiveness check
 data = pd.read_csv('Datasets/train_data_reduced.csv')
+#UNCOMMENT when running the test data evaluation
+# data = pd.read_csv('Datasets/test_data_reduced.csv')
 
 # Define variables
 exp_var = 'exposure'
