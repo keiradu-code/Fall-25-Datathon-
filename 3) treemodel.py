@@ -125,9 +125,9 @@ def train_xgb_model(train_df, test_df, predictors, response, params, num_boost_r
 
 
 
-##########################################
-#       RUNNING ON COPIED PARAMETERS     #
-##########################################
+###########################################################
+#       RUNNING ON COPIED PARAMETERS (BASELINE MODEL?)    #
+###########################################################
 params1 = {
     #regression function; tweedie is good because it is made for datasets with many 0's and only positive values
     'objective': 'reg:tweedie',
@@ -163,31 +163,61 @@ print("RMSE Test:", metrics1["RMSE_Test"])
 ###############################################
 #       LOOPING OVER PARAMETER VALUES         #
 ###############################################
-#ranges of parameter values: CHOOSE LESS!!!!! THIS WILL RUNN > 900 MODELS!!!!
+#loops over 192 combinations and saves the best outputs
 param_grid = {
-    'learning_rate': [0.01, 0.05, 0.1],
+    #how much each tree contributes to the final prediction
+    'learning_rate': [0.01, 0.05],
+    
+    #maximum depth/complexity of each tree
+    #smaller trees are less likely to overfit
     'max_depth': [3, 5, 7],
-    'min_child_weight': [1, 10, 100],
-    'subsample': [0.6, 0.8, 1.0],
-    'colsample_bytree': [0.6, 0.8, 1.0],
+    
+    #minimum sum of instance weights needed in a child node
+    #prevents creating nodes with too few samples
+    #low value allows splitting nodes with few samples --> more complex trees --> risk of overfitting
+    'min_child_weight': [1, 10],
+
+    #fraction of traninng samples used to grow each tree
+    #smaller introduces more randomess and reduces overfitting
+    'subsample': [0.6, 0.8],
+
+    #fraction of features/columns used per tree
+    #<1 introduces randomness and reduces overfitting
+    'colsample_bytree': [0.6, 0.8],
+
+    #L2 regularization term
+    #0 = no regularization
     'lambda': [0, 1.0],
-    'alpha': [0, 0.5],
+
+    #L1 regularization term
+    #Encourages sparsity as it increases
+    'alpha': [0, 0.5]
 }
 
 #unchanging parameters
 fixed_params = {
     'objective': 'reg:tweedie',
-    'tweedie_variance_power': 1.5,
     'seed': 42,
-    'nthread' : -1
+    'nthread' : -1, 
+    #Controls variance-mean relationship in tweedie regression
+    #p = 1 is poisson-like
+    # 1<p<2 is compount poisson-gamma (best for our case)
+    #p = 2 is gamme-like
+    'tweedie_variance_power': 1.5
 }
 
 #generate all possible combinations of parameter values
 keys, values = zip(*param_grid.items())
 combinations = [dict(zip(keys, v)) for v in itertools.product(*values)]
 
+#store the best model for each metric
+best_r2_train = {"score": -np.inf, "params": None, "metrics": None}
+best_r2_test  = {"score": -np.inf, "params": None, "metrics": None}
+best_rmse_train = {"score": np.inf, "params": None, "metrics": None}
+best_rmse_test  = {"score": np.inf, "params": None, "metrics": None}
+
+
 #loop over all of these combinations
-# Loop over each combination
 for i, combo in enumerate(combinations, start=1):
     params = fixed_params.copy()
     params.update(combo)
@@ -197,8 +227,42 @@ for i, combo in enumerate(combinations, start=1):
     
     metrics = train_xgb_model(train_data_reduced, test_data_reduced, predictors, response, params, num_boost_round=1000)
     
-    print(f"R2 Train: {metrics['R2_Train']:.4f}")
-    print(f"R2 Test:  {metrics['R2_Test']:.4f}")
-    print(f"RMSE Train: {metrics['RMSE_Train']:.4f}")
-    print(f"RMSE Test:  {metrics['RMSE_Test']:.4f}")
+    r2_train = metrics['R2_Train']
+    r2_test = metrics['R2_Test']
+    rmse_train = metrics['RMSE_Train']
+    rmse_test = metrics['RMSE_Test']
+    
+    print(f"R2 Train: {r2_train:.4f}, R2 Test: {r2_test:.4f}")
+    print(f"RMSE Train: {rmse_train:.4f}, RMSE Test: {rmse_test:.4f}")
+    
+    #check and save best train r^2
+    if r2_train > best_r2_train['score']:
+        best_r2_train['score'] = r2_train
+        best_r2_train['params'] = params
+        best_r2_train['metrics'] = metrics
+    
+    #check and save best test r^2
+    if r2_test > best_r2_test['score']:
+        best_r2_test['score'] = r2_test
+        best_r2_test['params'] = params
+        best_r2_test['metrics'] = metrics
+    
+    #check adn save best train rmse
+    if rmse_train < best_rmse_train['score']:
+        best_rmse_train['score'] = rmse_train
+        best_rmse_train['params'] = params
+        best_rmse_train['metrics'] = metrics
+    
+    #check and save best test rmse
+    if rmse_test < best_rmse_test['score']:
+        best_rmse_test['score'] = rmse_test
+        best_rmse_test['params'] = params
+        best_rmse_test['metrics'] = metrics
 
+
+#view top models after all combinations have been evaluated
+print("\n=== Best Models ===")
+print("Best R2 Train Model:", best_r2_train['score'], "Params:", best_r2_train['params'])
+print("Best R2 Test Model: ", best_r2_test['score'], "Params:", best_r2_test['params'])
+print("Best RMSE Train Model:", best_rmse_train['score'], "Params:", best_rmse_train['params'])
+print("Best RMSE Test Model: ", best_rmse_test['score'], "Params:", best_rmse_test['params'])
