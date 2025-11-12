@@ -119,11 +119,6 @@ def pairwise_scatterplots_for_feature_reduction(dataset, predictors):
 pairwise_scatterplots = pairwise_scatterplots_for_feature_reduction(model_data_encoded, predictors)
 
 
-#Which variables, based on these plots, look the most helpful? We don't do anything with this yet; it's just a hypothesis
-potentially_best_predictors = ["credit_score", "veh_body_BUS", "veh_body_MIBUS", "veh_body_PANVN", "veh_body_TRUCK", "veh_age_1", "veh_color_green", "veh_color_red", "time_drive_12am-6am", "trm_len_6"]
-
-
-
 #break up training and testing data
 train_data_encoded = model_data_encoded[model_data_encoded["sample"] == "1|bld"]
 test_data_encoded = model_data_encoded[model_data_encoded["sample"] == "2|val"]
