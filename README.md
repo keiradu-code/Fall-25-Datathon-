@@ -2,6 +2,7 @@
 
 Summary of Business Problem Steps and Our Plan! 
 
+DO MODEL LIKE NORMAL, EXPLAIN RELATIVE TO BUSINESS DESCRIPTION!!!!
 
 Notes: in the model data, "sample" column differentiates training and testing data. "1|bld" == training/building data, "2|val" == testing data. 
 
