@@ -42,51 +42,99 @@ xtest = test_data_reduced[predictors].copy()
 ytest = test_data_reduced[response].copy()
 #print(ytest.head())
 
-# --- Convert categorical columns ---
+#marks non-numeric predictors/columns as categorical
 for col in predictors:
     if xtrain[col].dtype == 'object':
         xtrain[col] = xtrain[col].astype('category')
     if xtest[col].dtype == 'object':
         xtest[col] = xtest[col].astype('category')
 
-# --- Prepare DMatrix for XGBoost ---
+#Prepare DMatrix for XGBoost
+#this wraps our data in a format that XGBoost can read
 dtrain = xgb.DMatrix(xtrain, label=ytrain, enable_categorical=True)
 dtest = xgb.DMatrix(xtest, label=ytest, enable_categorical=True)
 
-# --- XGBoost Tweedie Regression Parameters ---
-params = {
-    'objective': 'reg:tweedie',
+#XGBoost Tweedie Regression Parameters
+#parameters we can tune
+
+#here are the parameters he set in his code
+params1 = {
+    #must be a regression model (predicting numbers)
+    #Tweedie is good for data with lots of zeroes and positive numbers
+    'objective': 'reg:tweedie',   
+    #  
     'tweedie_variance_power': 1.5,
+    #smaller learning rate = slower but safer learning
     'learning_rate': 0.01,
+    #how deep the tree can go
+    #mess with this
     'max_depth': 5,
+    #
     'min_child_weight': 100,
     'subsample': 0.8,
     'colsample_bytree': 0.8,
     'lambda': 1.0,
     'alpha': 0.0,
     'nthread': -1,
+    #for reproducibility
     'seed': 42
 }
 
-# --- Train model directly (no CV) ---
-num_boost_round = 1000  # you can adjust this if needed
+#deeper tree
+params2 = {
+    #must be a regression model (predicting numbers)
+    #Tweedie is good for data with lots of zeroes and positive numbers
+    'objective': 'reg:tweedie',   
+    #  
+    'tweedie_variance_power': 1.5,
+    #smaller learning rate = slower but safer learning
+    'learning_rate': 0.01,
+    #how deep the tree can go
+    #mess with this
+    'max_depth': 25,
+    #
+    'min_child_weight': 100,
+    'subsample': 0.8,
+    'colsample_bytree': 0.8,
+    'lambda': 1.0,
+    'alpha': 0.0,
+    'nthread': -1,
+    #for reproducibility
+    'seed': 42
+}
+
+#Train model
+#number of trees (can tune)
+num_boost_round = 1000  
 print(f"Training XGBoost model with {num_boost_round} boosting rounds...")
-model = xgb.train(params, dtrain, num_boost_round=num_boost_round)
+model1 = xgb.train(params1, dtrain, num_boost_round=num_boost_round)
+model2 = xgb.train(params2, dtrain, num_boost_round=num_boost_round)
 
-# --- Predictions ---
-train_pred = model.predict(dtrain)
-test_pred = model.predict(dtest)
+#Predictions
+train_pred1 = model1.predict(dtrain)
+test_pred1 = model1.predict(dtest)
+train_pred2 = model2.predict(dtrain)
+test_pred2 = model2.predict(dtest)
 
-# --- Compute R² and RMSE ---
-r2_train = r2_score(ytrain, train_pred)
-r2_test = r2_score(ytest, test_pred)
-rmse_train = np.sqrt(mean_squared_error(ytrain, train_pred))
-rmse_test = np.sqrt(mean_squared_error(ytest, test_pred))
+#Compute R2 and RMSE
+r2_train_1 = r2_score(ytrain, train_pred1)
+r2_test_1 = r2_score(ytest, test_pred1)
+rmse_train_1 = np.sqrt(mean_squared_error(ytrain, train_pred1))
+rmse_test_1 = np.sqrt(mean_squared_error(ytest, test_pred1))
 
-print("\nModel Performance Metrics (no cross-validation):")
-print(f"R2 (Train): {r2_train:.2f}")
-print(f"R2 (Test):  {r2_test:.2f}")
-print(f"RMSE (Train): {rmse_train:.2f}")
-print(f"RMSE (Test):  {rmse_test:.2f}")
+r2_train_2 = r2_score(ytrain, train_pred2)
+r2_test_2 = r2_score(ytest, test_pred2)
+rmse_train_2 = np.sqrt(mean_squared_error(ytrain, train_pred2))
+rmse_test_2 = np.sqrt(mean_squared_error(ytest, test_pred2))
 
-print("\n Model training, prediction, and evaluation completed successfully.")
+print("\nModel1 Performance Metrics :")
+print(f"R2 (Train): {r2_train_1:.2f}")
+print(f"R2 (Test):  {r2_test_1:.2f}")
+print(f"RMSE (Train): {rmse_train_1:.2f}")
+print(f"RMSE (Test):  {rmse_test_1:.2f}")
+
+print("\nModel2 Performance Metrics :")
+print(f"R2 (Train): {r2_train_2:.2f}")
+print(f"R2 (Test):  {r2_test_2:.2f}")
+print(f"RMSE (Train): {rmse_train_2:.2f}")
+print(f"RMSE (Test):  {rmse_test_2:.2f}")
