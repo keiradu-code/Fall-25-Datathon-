@@ -5,6 +5,12 @@ import xgboost as xgb
 from sklearn.metrics import r2_score, mean_squared_error
 import numpy as np
 
+
+
+#######################################################
+#                  Prepare Data                       #    
+# #####################################################
+     
 #first set correct working directory
 from pathlib import Path
 
@@ -42,99 +48,109 @@ xtest = test_data_reduced[predictors].copy()
 ytest = test_data_reduced[response].copy()
 #print(ytest.head())
 
-#marks non-numeric predictors/columns as categorical
-for col in predictors:
-    if xtrain[col].dtype == 'object':
-        xtrain[col] = xtrain[col].astype('category')
-    if xtest[col].dtype == 'object':
-        xtest[col] = xtest[col].astype('category')
 
-#Prepare DMatrix for XGBoost
-#this wraps our data in a format that XGBoost can read
-dtrain = xgb.DMatrix(xtrain, label=ytrain, enable_categorical=True)
-dtest = xgb.DMatrix(xtest, label=ytest, enable_categorical=True)
 
-#XGBoost Tweedie Regression Parameters
-#parameters we can tune
 
-#here are the parameters he set in his code
+
+
+
+
+
+###################################################
+#           XGBoost MODEL FUNCTION                #
+###################################################
+
+def train_xgb_model(train_df, test_df, predictors, response, params, num_boost_round=1000):
+    """
+    Train an XGBoost model on training data and evaluate on test data
+
+    Parameters:
+    train_df : training data
+    test_df : testing data
+    predictors : list of str; names of predictors/columns
+    response : str; name of the response column
+    params : dict of XGBoost parameters
+    num_boost_round : int, default=1000; number of bosting rounds
+
+    returns a dictionary with trained model, predictions, and performance metrics (R2 and RMSE)
+    """
+    
+    #split predictors and response
+    xtrain = train_df[predictors].copy()
+    ytrain = train_df[response].copy()
+    
+    xtest = test_df[predictors].copy()
+    ytest = test_df[response].copy()
+    
+    #convert categorical columns 
+    for col in predictors:
+        if xtrain[col].dtype == 'object':
+            xtrain[col] = xtrain[col].astype('category')
+        if xtest[col].dtype == 'object':
+            xtest[col] = xtest[col].astype('category')
+    
+    #prepare data for xgboost to read
+    dtrain = xgb.DMatrix(xtrain, label=ytrain, enable_categorical=True)
+    dtest = xgb.DMatrix(xtest, label=ytest, enable_categorical=True)
+    
+    #train model
+    model = xgb.train(params, dtrain, num_boost_round=num_boost_round)
+    
+    #make predictions
+    train_pred = model.predict(dtrain)
+    test_pred = model.predict(dtest)
+    
+    #compute metrics
+    r2_train = r2_score(ytrain, train_pred)
+    r2_test = r2_score(ytest, test_pred)
+    rmse_train = np.sqrt(mean_squared_error(ytrain, train_pred))
+    rmse_test = np.sqrt(mean_squared_error(ytest, test_pred))
+    
+    metrics = {
+        "R2_Train": r2_train,
+        "R2_Test": r2_test,
+        "RMSE_Train": rmse_train,
+        "RMSE_Test": rmse_test,
+        "Train_Pred": train_pred,
+        "Test_Pred": test_pred,
+        "Model": model
+    }
+    
+    return metrics
+
+
+
+
+
 params1 = {
-    #must be a regression model (predicting numbers)
-    #Tweedie is good for data with lots of zeroes and positive numbers
-    'objective': 'reg:tweedie',   
-    #  
+    #regression function; tweedie is good because it is made for datasets with many 0's and only positive values
+    'objective': 'reg:tweedie',
     'tweedie_variance_power': 1.5,
-    #smaller learning rate = slower but safer learning
+    #smaller learning rate = learns slower
     'learning_rate': 0.01,
-    #how deep the tree can go
-    #mess with this
+    #depth of the tree
     'max_depth': 5,
-    #
+    #?
     'min_child_weight': 100,
+    #?
     'subsample': 0.8,
+    #?
     'colsample_bytree': 0.8,
+    #?
     'lambda': 1.0,
+    #?
     'alpha': 0.0,
+    #?
     'nthread': -1,
     #for reproducibility
     'seed': 42
 }
 
-#deeper tree
-params2 = {
-    #must be a regression model (predicting numbers)
-    #Tweedie is good for data with lots of zeroes and positive numbers
-    'objective': 'reg:tweedie',   
-    #  
-    'tweedie_variance_power': 1.5,
-    #smaller learning rate = slower but safer learning
-    'learning_rate': 0.01,
-    #how deep the tree can go
-    #mess with this
-    'max_depth': 25,
-    #
-    'min_child_weight': 100,
-    'subsample': 0.8,
-    'colsample_bytree': 0.8,
-    'lambda': 1.0,
-    'alpha': 0.0,
-    'nthread': -1,
-    #for reproducibility
-    'seed': 42
-}
+metrics1 = train_xgb_model(train_data_reduced, test_data_reduced, predictors, response, params1, num_boost_round=1000)
 
-#Train model
-#number of trees (can tune)
-num_boost_round = 1000  
-print(f"Training XGBoost model with {num_boost_round} boosting rounds...")
-model1 = xgb.train(params1, dtrain, num_boost_round=num_boost_round)
-model2 = xgb.train(params2, dtrain, num_boost_round=num_boost_round)
+print("For Model 1: ")
+print("R2 Train:", metrics1["R2_Train"])
+print("R2 Test:", metrics1["R2_Test"])
+print("RMSE Train:", metrics1["RMSE_Train"])
+print("RMSE Test:", metrics1["RMSE_Test"])
 
-#Predictions
-train_pred1 = model1.predict(dtrain)
-test_pred1 = model1.predict(dtest)
-train_pred2 = model2.predict(dtrain)
-test_pred2 = model2.predict(dtest)
-
-#Compute R2 and RMSE
-r2_train_1 = r2_score(ytrain, train_pred1)
-r2_test_1 = r2_score(ytest, test_pred1)
-rmse_train_1 = np.sqrt(mean_squared_error(ytrain, train_pred1))
-rmse_test_1 = np.sqrt(mean_squared_error(ytest, test_pred1))
-
-r2_train_2 = r2_score(ytrain, train_pred2)
-r2_test_2 = r2_score(ytest, test_pred2)
-rmse_train_2 = np.sqrt(mean_squared_error(ytrain, train_pred2))
-rmse_test_2 = np.sqrt(mean_squared_error(ytest, test_pred2))
-
-print("\nModel1 Performance Metrics :")
-print(f"R2 (Train): {r2_train_1:.2f}")
-print(f"R2 (Test):  {r2_test_1:.2f}")
-print(f"RMSE (Train): {rmse_train_1:.2f}")
-print(f"RMSE (Test):  {rmse_test_1:.2f}")
-
-print("\nModel2 Performance Metrics :")
-print(f"R2 (Train): {r2_train_2:.2f}")
-print(f"R2 (Test):  {r2_test_2:.2f}")
-print(f"RMSE (Train): {rmse_train_2:.2f}")
-print(f"RMSE (Test):  {rmse_test_2:.2f}")
