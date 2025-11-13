@@ -1,20 +1,25 @@
 
 #lets find the eval
 
+#pandas
+import pandas as pd
+import os
 # Ensure the parent directory is in the path for module import
 import sys
 sys.path.append(os.path.abspath(".."))
-from analysis_tool_chest.data_exploration import PredictivenessCheck
-from analysis_tool_chest.model_selection import ModelEvaluation
+from Datasets.data_exploration import PredictivenessCheck
+from Datasets.model_selection import ModelEvaluation
 
 # Select training samples for predictiveness check
-data = train_data
+data = pd.read_csv('Datasets/train_data_reduced.csv')
+#UNCOMMENT when running the test data evaluation
+# data = pd.read_csv('Datasets/test_data_reduced.csv')
 
 # Define variables
 exp_var = 'exposure'
-pred_var = 'pred_rescale'
-var_1 = 'claim_amt_capped'
-var_2 = 'pred_rescale'
+pred_var = 'train_pred1'
+var_1 = 'claim_amt'
+var_2 = 'train_pred1'
 nbins = 10
 
 
