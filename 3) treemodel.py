@@ -124,42 +124,6 @@ def train_xgb_model(train_df, test_df, predictors, response, params, num_boost_r
 
 
 
-
-###########################################################
-#       RUNNING ON COPIED PARAMETERS (BASELINE MODEL?)    #
-###########################################################
-params1 = {
-    #regression function; tweedie is good because it is made for datasets with many 0's and only positive values
-    'objective': 'reg:tweedie',
-    'tweedie_variance_power': 1.5,
-    #smaller learning rate = learns slower
-    'learning_rate': 0.01,
-    #depth of the tree
-    'max_depth': 5,
-    #?
-    'min_child_weight': 100,
-    #?
-    'subsample': 0.8,
-    #?
-    'colsample_bytree': 0.8,
-    #?
-    'lambda': 1.0,
-    #?
-    'alpha': 0.0,
-    #?
-    'nthread': -1,
-    #for reproducibility
-    'seed': 42
-}
-
-metrics1 = train_xgb_model(train_data_reduced, test_data_reduced, predictors, response, params1, num_boost_round=1000)
-
-print("For Model 1: ")
-print("R2 Train:", metrics1["R2_Train"])
-print("R2 Test:", metrics1["R2_Test"])
-print("RMSE Train:", metrics1["RMSE_Train"])
-print("RMSE Test:", metrics1["RMSE_Test"])
-
 ###############################################
 #       LOOPING OVER PARAMETER VALUES         #
 ###############################################
