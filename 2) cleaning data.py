@@ -18,6 +18,7 @@ os.chdir(datasets_dir)
 print("Current working directory:", Path.cwd())
 
 model_data = pd.read_csv("model_data.csv")
+inference_data = pd.read_csv("inference_data.csv")
 
 
 
@@ -33,6 +34,7 @@ model_data = pd.read_csv("model_data.csv")
 # Rename columns for clarity and consistency
 model_data = model_data.rename(columns={'numclaims': 'claim_cnt'})
 model_data = model_data.rename(columns={'claimcst0': 'claim_amt'})
+
 
 # Create a new column 'claim_sev' (claim severity) as claim_amt divided by claim_cnt
 # If claim_cnt is zero, set claim_sev to NaN to avoid division by zero
@@ -70,8 +72,14 @@ categorical_cols = ["veh_body", "veh_age", "gender", "area", "agecat", "engine_t
 # One-hot encode categorical variables 
 model_data_encoded = pd.get_dummies(model_data, columns=categorical_cols, drop_first=False)
 
+inference_data_encoded = pd.get_dummies(inference_data, columns=categorical_cols, drop_first=False)
+
 #this saves them as TRUE/FALSE. Let's change that to 1/0
 model_data_encoded[model_data_encoded.select_dtypes(bool).columns] = model_data_encoded.select_dtypes(bool).astype(int)
+
+inference_data_encoded[inference_data_encoded.select_dtypes(bool).columns] = inference_data_encoded.select_dtypes(bool).astype(int)
+
+inference_data_encoded = inference_data_encoded.rename(columns={'low_education_ind_0': 'low_education_ind_0.0'})
 
 
 #how many variables do we have now? 
@@ -179,7 +187,18 @@ test_data_reduced = reduced_data[reduced_data['sample'] == '2|val']
 #test_data_reduced.to_csv("test_data_reduced.csv", index=False)
 
 
+predictors = ['max_power', 'trm_len_6', 'engine_type_dissel', 'low_education_ind_0.0',
+       'marital_status_M', 'time_of_week_driven_weekday',
+       'time_driven_6am - 12pm', 'gender_F', 'veh_age_1', 'area_B',
+       'veh_age_4', 'veh_body_STNWG', 'agecat_3', 'area_A', 'veh_color_black',
+       'area_D', 'agecat_1', 'engine_type_hybrid', 'veh_color_yellow',
+       'agecat_2', 'veh_color_red', 'time_driven_6pm - 12am', 'veh_body_COUPE',
+       'veh_body_RDSTR', 'veh_body_UTE', 'veh_body_CONVT',
+       'driving_history_score', 'veh_body_HDTOP', 'veh_color_brown']
 
+inference_data_encoded = inference_data_encoded[predictors]
+
+inference_data_encoded.to_csv("inference_data_reduced.csv", index=False)
 
 #####################################################
 #                   SANITY CHECKS!                  #   
