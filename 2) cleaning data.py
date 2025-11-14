@@ -132,8 +132,8 @@ train_data_encoded = model_data_encoded[model_data_encoded["sample"] == "1|bld"]
 test_data_encoded = model_data_encoded[model_data_encoded["sample"] == "2|val"]
 
 #save data
-#train_data_encoded.to_csv("train_data_encoded.csv", index=False)
-#test_data_encoded.to_csv("test_data_encoded.csv", index=False)
+train_data_encoded.to_csv("train_data_encoded.csv", index=False)
+test_data_encoded.to_csv("test_data_encoded.csv", index=False)
 
 
 
@@ -196,9 +196,19 @@ predictors = ['max_power', 'trm_len_6', 'engine_type_dissel', 'low_education_ind
        'veh_body_RDSTR', 'veh_body_UTE', 'veh_body_CONVT',
        'driving_history_score', 'veh_body_HDTOP', 'veh_color_brown']
 
+#save reduced inference data
 inference_data_encoded = inference_data_encoded[predictors]
 
 inference_data_encoded.to_csv("inference_data_reduced.csv", index=False)
+
+
+
+
+
+
+
+
+
 
 #####################################################
 #                   SANITY CHECKS!                  #   
