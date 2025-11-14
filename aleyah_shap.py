@@ -1,5 +1,5 @@
 import pandas as pd
-
+from treemodel import model, params
 
 '''
 import warnings
@@ -30,7 +30,17 @@ predictors = ['max_power', 'trm_len_6', 'engine_type_dissel', 'low_education_ind
        'agecat_2', 'veh_color_red', 'time_driven_6pm - 12am', 'veh_body_COUPE',
        'veh_body_RDSTR', 'veh_body_UTE', 'veh_body_CONVT',
        'driving_history_score', 'veh_body_HDTOP', 'veh_color_brown']
+response = ['claim_amt']
 
-inference_data_reduced = pd.read_csv('/Users/aleyahsidhu/vscode projects/Fall-25-Datathon-/Datasets/inference_data_reduced.csv')
+
+inference_predictions = pd.read_csv('/Users/aleyahsidhu/vscode projects/Fall-25-Datathon-/Datasets/inference_predictions.csv')
+train_data_reduced = pd.read_csv('/Users/aleyahsidhu/vscode projects/Fall-25-Datathon-/Datasets/train_data_reduced.csv')
 
 
+mdl = train_data_reduced(
+    train_df=train_data_reduced,
+    predictors=predictors,
+    response=response,
+    params=params,
+    num_boost_round=1000
+)
