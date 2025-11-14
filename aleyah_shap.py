@@ -1,5 +1,6 @@
 import pandas as pd
-from 3) treemodel import model
+
+
 '''
 import warnings
 warnings.filterwarnings("ignore")
