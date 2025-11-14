@@ -5,6 +5,7 @@ import xgboost as xgb
 from sklearn.metrics import r2_score, mean_squared_error
 import numpy as np
 import itertools
+import shap
 
 
 
@@ -279,6 +280,24 @@ model = train_final_model(
     params=params,
     num_boost_round=1000
 )
+
+# 1. Use a subset of training data for SHAP calculations
+X_sample = xtrain.sample(500, random_state=42)  # use fewer rows for faster SHAP
+
+# 2. Create a TreeExplainer
+explainer = shap.TreeExplainer(model)
+
+# 3. Compute SHAP values
+shap_values = explainer.shap_values(X_sample)
+
+# 4. Summary Plot (global feature importance)
+shap.summary_plot(shap_values, X_sample)
+
+# 5. (Optional) Detailed waterfall plot for a single prediction
+shap.plots.waterfall(shap.Explanation(values=shap_values[0],
+                                      base_values=explainer.expected_value,
+                                      data=X_sample.iloc[0]))
+
 
 #define inference model
 def run_inference(model, inference_df, predictors):
